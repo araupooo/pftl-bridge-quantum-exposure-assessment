@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge Quantum-Exposure and Migration Assessment</title>
+<style>
+  body { font-family: Georgia, "Times New Roman", serif; max-width: 860px; margin: 0 auto; padding: 24px; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.7em; border-bottom: 2px solid #1a1a1a; padding-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-top: 1.8em; border-bottom: 1px solid #999; padding-bottom: 4px; }
+  h3 { font-size: 1.1em; margin-top: 1.4em; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.88em; }
+  pre { background: #f4f4f4; padding: 12px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.94em; }
+  th, td { border: 1px solid #bbb; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  .tag { font-weight: bold; }
+  .assumption { color: #8a5a00; }
+  .confirmed { color: #0a6b2e; }
+  .unverified { color: #a00; }
+  .pass { color: #0a6b2e; font-weight: bold; }
+  .note { background: #fff8e6; border-left: 4px solid #d9a400; padding: 10px 14px; margin: 14px 0; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-all; }
+  footer { margin-top: 2em; border-top: 1px solid #999; padding-top: 10px; font-size: 0.9em; color: #555; }
+</style>
+</head>
+<body>
+<h1>Bridge Quantum-Exposure and Migration Assessment</h1>
+<p>An assessment of the proposed cross-chain bridge that would move value between the
+native asset on the ledger and a wrapped representation on an external chain: its quantum
+custody risks, cross-chain replay exposure, and a migration path to hybrid ML-DSA / SLH-DSA
+signing.</p>
+<p><strong>Reproduction:</strong> <code>python3 scripts/run_all.py</code> from the pack root
+(Python 3 standard library only). <strong>Measured result: 7 of 7 checks PASS, 29 of 29
+assertions PASS, 0 FAIL.</strong></p>
+
+<h2>1. Summary</h2>
+<ol>
+<li><strong>The ledger side is quantum-safe by design.</strong> Accounts and validators sign
+with ML-DSA-65 from genesis, with domain-separated contexts that explicitly include bridge
+witnesses (whitepaper section 1.11).</li>
+<li><strong>The quantum exposure is concentrated in exactly the places the whitepaper&rsquo;s
+own scope limit names:</strong> bridge proofs wrap in Groth16 (pairing-based, classical), and
+external-chain contracts &ldquo;use their own cryptography&rdquo; (classical). A third exposure is
+inherited, not stated: bridge witness keys are secp256k1 or ed25519, both breakable by
+Shor&rsquo;s algorithm.</li>
+<li><strong>The logic defences are sound and measured.</strong> Quorum counting, claim-ID
+consumption, domain separation, duplicate and reorder handling are verified in the replay
+harness: 7 of 7 checks pass, 29 of 29 assertions pass. Reordered validations produce an
+identical final-state digest across 4 runs; duplicated validations are idempotent; a second
+mint of the same lock is rejected; tampered validations are rejected; the 24-of-35 quorum
+boundary is exact.</li>
+<li><strong>The bridge premise itself is unverified.</strong> No primary source confirms an
+ERC-20 representation on Base, a Base bridge contract, or a genesis bridging procedure.
+The assessment treats the bridge as a stated premise and assesses the design that would
+follow from it; it does not assert the bridge exists.</li>
+<li><strong>Migration is plannable now, but two exposures have no complete fix today:</strong>
+Groth16 bridge proofs and destination-chain cryptography.</li>
+</ol>
+
+<h2>2. Assumptions register</h2>
+<div class="note"><strong>Read first.</strong> This register is authoritative. Anything marked
+ASSUMPTION is not asserted as fact anywhere in this pack.</div>
+<table>
+<tr><th>ID</th><th>Assumption</th><th>Status</th></tr>
+<tr><td>A1</td><td>An ERC-20 representation of the native asset on Base exists or is planned before mainnet, with bridging to the native asset at genesis.</td><td class="unverified">UNVERIFIED — no primary source found. The whitepaper contains zero occurrences of &ldquo;ERC-20&rdquo; and no mention of the Base chain.</td></tr>
+<tr><td>A2</td><td>The destination chain is Base.</td><td class="unverified">UNVERIFIED — no primary source names Base as a destination chain.</td></tr>
+<tr><td>A3</td><td>The bridge deployment follows the inherited XRPL XChainBridge design.</td><td class="unverified">UNVERIFIED — mechanism confirmed in code; application to this bridge assumed.</td></tr>
+<tr><td>A4</td><td>The whitepaper&rsquo;s 24-of-35 quorum applies to bridge witnesses.</td><td class="assumption">ASSUMPTION — stated for validators; bridge-witness application not stated.</td></tr>
+<tr><td>A5</td><td>The validator set is 35.</td><td class="assumption">CONFLICT — homepage snapshot (21 Sep 2026) reports 53 validators.</td></tr>
+<tr><td>A6</td><td><code>fixAmendmentMajorityCalc</code> (67% threshold) is enabled on the live network.</td><td class="unverified">UNVERIFIED — amendment name not located in code; activation unknown.</td></tr>
+<tr><td>A7</td><td>The &ldquo;How the bridge stays post-quantum&rdquo; page exists.</td><td class="unverified">UNVERIFIED — link target not resolved.</td></tr>
+<tr><td>A8</td><td>The HMAC attestation model tests the real logic.</td><td class="assumption">LOGIC MODEL — tests attestation logic, not cryptographic primitives.</td></tr>
+<tr><td>A9</td><td>CNSA 2.0 per-class deadlines (2027/2030/2033) are as reported.</td><td class="assumption">SECONDARY-SOURCED — NSA PDF not retrievable here; 2035 confirmed by IR 8547.</td></tr>
+<tr><td>A10</td><td>A -20 revision of the LAMPS composite-signatures draft may exist.</td><td class="unverified">UNVERIFIED — draft -19 expired 23 Oct 2026; later revisions not checked.</td></tr>
+<tr><td>A11</td><td>RFC 9909 standardises SLH-DSA in X.509.</td><td class="assumption">SECONDARY-SOURCED — not re-verified; not relied on.</td></tr>
+<tr><td>A12</td><td>Axelar&rsquo;s 80% validator approval figure is current.</td><td class="assumption">CAVEAT — 2021 whitepaper figure; current threshold not re-verified.</td></tr>
+<tr><td>A13</td><td>The joint CISA/NSA/NIST factsheet names harvest-now-decrypt-later.</td><td class="assumption">SECONDARY-SOURCED — factsheet not fetched.</td></tr>
+</table>
+
+<h2>3. Pinned architecture (summary)</h2>
+<p>Full detail: <code>architecture.md</code>.</p>
+<ul>
+<li><strong>Custody.</strong> Source-chain lock held by a door account or lock contract
+(mechanism confirmed from the inherited design; this bridge&rsquo;s custodian unverified, A3).</li>
+<li><strong>Mint/burn authority.</strong> The destination contract mints only on a verified
+quorum of witness attestations; redemption burns and releases the lock (assumed, A3).</li>
+<li><strong>Quorum.</strong> 24 of 35 as stated in the whitepaper; bridge-witness application
+assumed (A4); validator count conflicted (A5).</li>
+<li><strong>Supply accounting.</strong> s_native + s_shielded + s_external + s_in-flight =
+s_authorized; a claim occupies exactly one category at each stage (whitepaper section 1.3).
+A double-mint breaks this identity by counting one claim twice.</li>
+<li><strong>Attestations.</strong> Witness keys are secp256k1 or ed25519; contexts are
+domain-separated, including for bridge witnesses; claim IDs are consumed on execution.</li>
+<li><strong>Scope limit.</strong> Bridge proofs wrap in Groth16; external-chain contracts use
+their own cryptography. The post-quantum claim covers account and validator authorisation
+and nothing broader.</li>
+</ul>
+
+<h2>4. Threat model (summary)</h2>
+<p>Full detail: <code>threat-model.md</code>. Timeline anchors: Mosca (2015), &ldquo;a 1/2 chance
+of breaking RSA-2048 by 2031&rdquo;; Global Risk Institute (March 2026, 26 experts), CRQC
+&ldquo;quite possible&rdquo; (28&ndash;49%) within 10 years, &ldquo;likely&rdquo; (51&ndash;70%) within 15 years;
+NIST IR 8547 (final, October 2026), quantum-vulnerable algorithms deprecated after 2030,
+disallowed after 2035, post-quantum signatures by 31 December 2031.</p>
+<table>
+<tr><th>ID</th><th>Threat</th><th>Severity</th><th>Status</th></tr>
+<tr><td>T1</td><td>Signer compromise by a quantum adversary (classical witness keys)</td><td>High</td><td>Open; migration phases 1&ndash;2</td></tr>
+<tr><td>T2</td><td>Quorum design weakness (set size, operator correlation)</td><td>Medium</td><td>Open; deployment data needed (A3, A5)</td></tr>
+<tr><td>T3</td><td>Cross-chain replay (domain separation)</td><td>High if missing</td><td>Controlled in code; destination contract unverified</td></tr>
+<tr><td>T4</td><td>Double-spend paths (claim-ID reuse, destination re-mint, reorg)</td><td>High</td><td>Logic defences measured; residual paths open</td></tr>
+<tr><td>T5</td><td>Reordered / duplicated validations</td><td>Medium</td><td>Measured: identical digest, idempotent no-op</td></tr>
+<tr><td>T6</td><td>Tampered attestations</td><td>High if keys fall</td><td>Measured: all tamper cases rejected</td></tr>
+<tr><td>T7</td><td>Bridge-proof soundness (Groth16, pairing-based)</td><td>High</td><td>Open research dependency</td></tr>
+<tr><td>T8</td><td>External-chain contract cryptography (classical EVM)</td><td>High</td><td>Open; minimise external value at risk</td></tr>
+<tr><td>T9</td><td>Governance / amendment risk (67% vs 79.6875%, activation unknown)</td><td>Medium</td><td>Open; needs a live ledger check (A6)</td></tr>
+<tr><td>T10</td><td>Key-compromise response failure (revocation window)</td><td>Medium-high</td><td>Procedure in migration.md section 6</td></tr>
+</table>
+
+<h2>5. Measured results</h2>
+<p>The replay harness (<code>scripts/run_all.py</code>, Python 3 standard library only) models
+bridge validations as signed attestation records and tests ordering, duplication, quorum, and
+tamper handling. Signatures in the model are HMAC-SHA256 tags with deterministically derived
+keys, explicitly labelled a <strong>LOGIC MODEL</strong>: they test the attestation logic, not
+cryptographic primitives.</p>
+<p><strong>Overall: 7 of 7 checks <span class="pass">PASS</span>, 29 of 29 assertions
+<span class="pass">PASS</span>, 0 FAIL.</strong> Unedited logs: <code>outputs/</code>.</p>
+<table>
+<tr><th>Check</th><th>Result</th><th>What was measured</th></tr>
+<tr><td>t01_reorder</td><td class="pass">PASS</td><td>Claims A (100,000,000 atoms), B (250,000,000), C (50,000,000) in orders [A,B,C] &times;2 and [C,A,B] &times;2. All 4 runs produce the identical final-state digest <span class="mono">ea00ee470531c76d6e30f57eefcd97ee412cd1cfffef28d69c694962d5fee257</span>.</td></tr>
+<tr><td>t02_duplicate</td><td class="pass">PASS</td><td>Duplicate validation rejected (<code>ERR_ALREADY_MINTED</code>); balance stays 100,000,000, not 200,000,000; one mint in the trace.</td></tr>
+<tr><td>t03_double_spend</td><td class="pass">PASS</td><td>Second mint of the same lock rejected; no value reaches the second destination.</td></tr>
+<tr><td>t04_tamper</td><td class="pass">PASS</td><td>Altered amount, wrong domain separator, and forged signature all rejected; no mint executed.</td></tr>
+<tr><td>t05_quorum</td><td class="pass">PASS</td><td>23 attestations insufficient; 24 sufficient; 35 sufficient; 24 attestations from 23 distinct witnesses insufficient.</td></tr>
+<tr><td>t06_negative</td><td class="pass">PASS</td><td>Empty set, stale-nonce replay, exact replay, cross-chain replay, and lone attestation all rejected.</td></tr>
+<tr><td>t07_sizes</td><td class="pass">PASS</td><td>24 &times; 3,309 = 79,416 signature bytes (whitepaper figure); 24 &times; 1,952 = 46,848 public-key bytes; ML-KEM-768 ciphertext 1,088 bytes.</td></tr>
+</table>
+<p><strong>What the measurements do not establish:</strong> real cryptography (A8), a live chain,
+a real destination contract, or the residual double-spend paths in T4. See
+<code>limitations.md</code>.</p>
+
+<h2>6. Migration plan (summary)</h2>
+<p>Full detail: <code>migration.md</code>. ML-DSA-65 is the recommended bridge signature scheme
+(category 3, 1,952-byte public keys, 3,309-byte signatures) — the same parameter set the ledger
+already uses. ML-DSA-87 (category 5) is the higher-assurance option. SLH-DSA is the
+lattice-failure fallback, a poor fit for high-frequency attestation at 7,856&ndash;49,856-byte
+signatures.</p>
+<p>There is <strong>no NIST hybrid-signature standard</strong>. The transition vehicle is the
+IETF LAMPS composite-ML-DSA draft (AND-mode verification, keys never reused standalone) —
+revision -19 expired 23 October 2026 and is not an RFC. Single ML-DSA in X.509 is
+standardised in RFC 9881 and is the end state. Transport hardens with ML-KEM-768 in a hybrid
+PQ/T construction per SP 800-227 section 4.6. Firmware/release signing uses LMS/XMSS under
+SP 800-208.</p>
+<p>Phases: 0 inventory and crypto-agility; 1 hybrid composite witness signatures; 2 quorum
+migration with a dual-signature window; 3 classical deprecation with a versioned domain
+separator; 4 full ML-DSA operation and annual review. Rollback protection: versioned domains,
+no downgrade after cutover, claim-ID epoch continuity, emergency mint halt at 12 compromised
+keys (half the quorum margin).</p>
+
+<h2>7. Limitations</h2>
+<p>See <code>limitations.md</code>. In short: the bridge premise is unverified; no deployed bridge
+was available to verify; Groth16 bridge proofs and destination-chain cryptography have no
+complete fix today; residual double-spend paths (source-chain double recording, destination
+re-mint without a processed-claim set, source-chain reorganisation) are open; the harness is
+a logic model, not a cryptographic test.</p>
+
+<h2>8. Sources</h2>
+<p>Every specification-derived claim cites a primary source in <code>sources.md</code> — NIST FIPS
+203/204/205, SP 800-227 §4.6, SP 800-208, IR 8547, RFC 9881, the LAMPS composite-signatures
+draft, the whitepaper, postfiatd and upstream XRPL source code, XRPL witness-server
+documentation, Wormhole/Axelar/LayerZero official docs, Mosca ePrint 2015/1075, the Global
+Risk Institute 2025 timeline report, and the NSA CNSA 2.0 FAQ. Items that could not be
+verified against a primary source are marked UNVERIFIED or secondary-sourced.</p>
+
+<footer>
+<p>Rendered findings page. Static, self-contained, no external assets. Mirrors
+<code>findings.md</code>. Verify pack integrity with <code>sha256sum -c DIGESTS.txt</code>
+from the pack root.</p>
+</footer>
+</body>
+</html>
