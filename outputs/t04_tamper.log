@@ -1,0 +1,9 @@
+Check t04_tamper: tampered validations are rejected
+  altered amount: ERR_BAD_SIGNATURE (witness 0 signature does not verify)
+  PASS: altered amount rejected (signature mismatch)
+  wrong domain separator: ERR_WRONG_DOMAIN (domain 'other-bridge/v1' is not this bridge)
+  PASS: wrong domain separator rejected
+  forged signature: ERR_BAD_SIGNATURE (witness 5 signature does not verify)
+  PASS: forged signature rejected
+  PASS: no mint executed by any tampered validation
+RESULT: t04_tamper PASS

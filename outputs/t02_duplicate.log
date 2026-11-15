@@ -1,0 +1,8 @@
+Check t02_duplicate: duplicated validation is an idempotent no-op
+  first submission: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  duplicate submission: ERR_ALREADY_MINTED (claim 25e6ae22293bfb5b already executed)
+  PASS: first validation mints
+  PASS: duplicate validation rejected as already executed
+  PASS: mint applied exactly once (balance 100000000, not 200000000)
+  PASS: exactly one mint in the state trace
+RESULT: t02_duplicate PASS

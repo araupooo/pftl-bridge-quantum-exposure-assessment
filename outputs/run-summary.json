@@ -1,0 +1,33 @@
+{
+  "checks": {
+    "t01_reorder": "PASS",
+    "t02_duplicate": "PASS",
+    "t03_double_spend": "PASS",
+    "t04_tamper": "PASS",
+    "t05_quorum": "PASS",
+    "t06_negative": "PASS",
+    "t07_sizes": "PASS"
+  },
+  "claims": {
+    "A": {
+      "amount": 100000000,
+      "destination": "dest-alice",
+      "nonce": 1
+    },
+    "B": {
+      "amount": 250000000,
+      "destination": "dest-bob",
+      "nonce": 2
+    },
+    "C": {
+      "amount": 50000000,
+      "destination": "dest-carol",
+      "nonce": 3
+    }
+  },
+  "domain": "pftl-bridge/v1",
+  "harness": "python3 scripts/run_all.py",
+  "model": "HMAC-SHA256 attestation logic model (see bridge_model.py)",
+  "overall": "PASS",
+  "quorum": "24-of-35"
+}

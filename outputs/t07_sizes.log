@@ -1,0 +1,13 @@
+Check t07_sizes: cited FIPS size figures and quorum arithmetic
+  figures below are the values cited in sources.md; this check
+  asserts the pack's arithmetic on them, not the standards.
+  ML-DSA-65 signature: 3309 bytes; public key: 1952 bytes
+  quorum signature bytes: 24 x 3309 = 79416
+  PASS: 24 x 3,309 = 79,416 signature bytes (whitepaper figure)
+  PASS: 24 x 1,952 = 46,848 public-key bytes
+  SLH-DSA-SHA2-128s signature: 7856 bytes
+  SLH-DSA-SHA2-256f signature: 49856 bytes
+  PASS: SLH-DSA-256f signatures are larger than ML-DSA-65 signatures
+  ML-KEM-768 ciphertext: 1088 bytes
+  PASS: ML-KEM-768 ciphertext is 1,088 bytes
+RESULT: t07_sizes PASS

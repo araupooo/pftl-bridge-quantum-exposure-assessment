@@ -1,0 +1,15 @@
+Check t06_negative: empty set, stale nonce, cross-chain replay
+  empty attestation set: ERR_EMPTY (empty attestation set)
+  PASS: empty attestation set rejected
+  claim A executes: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  stale-nonce replay (same lock, nonce 1, new amount/dest): ERR_ALREADY_MINTED (claim 25e6ae22293bfb5b already executed)
+  PASS: stale-nonce replay of a consumed claim is rejected
+  PASS: stale-nonce replay minted nothing
+  exact replay of consumed claim A: ERR_ALREADY_MINTED (claim 25e6ae22293bfb5b already executed)
+  PASS: exact replay of an executed claim is rejected
+  PASS: replay minted nothing extra
+  cross-chain replay (other bridge domain): ERR_WRONG_DOMAIN (domain 'other-bridge/v1' is not this bridge)
+  PASS: cross-chain replay rejected by domain separation
+  single attestation: ERR_NO_QUORUM (1 distinct witnesses, quorum is 24)
+  PASS: a lone attestation cannot execute a claim
+RESULT: t06_negative PASS

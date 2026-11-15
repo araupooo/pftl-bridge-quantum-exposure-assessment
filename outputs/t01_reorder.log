@@ -1,0 +1,22 @@
+Check t01_reorder: reordered validations yield identical state
+  claims: A=100000000, B=250000000, C=50000000 atoms
+  orders: [A,B,C] x2 runs, [C,A,B] x2 runs
+  run 1, apply A: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  run 1, apply B: OK (minted 250000000 atoms to dest-bob (claim 279ac7b5d5501537))
+  run 1, apply C: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  run 1 applied order A,B,C -> state digest ea00ee470531c76d6e30f57eefcd97ee412cd1cfffef28d69c694962d5fee257
+  run 2, apply A: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  run 2, apply B: OK (minted 250000000 atoms to dest-bob (claim 279ac7b5d5501537))
+  run 2, apply C: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  run 2 applied order A,B,C -> state digest ea00ee470531c76d6e30f57eefcd97ee412cd1cfffef28d69c694962d5fee257
+  run 3, apply C: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  run 3, apply A: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  run 3, apply B: OK (minted 250000000 atoms to dest-bob (claim 279ac7b5d5501537))
+  run 3 applied order C,A,B -> state digest ea00ee470531c76d6e30f57eefcd97ee412cd1cfffef28d69c694962d5fee257
+  run 4, apply C: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  run 4, apply A: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  run 4, apply B: OK (minted 250000000 atoms to dest-bob (claim 279ac7b5d5501537))
+  run 4 applied order C,A,B -> state digest ea00ee470531c76d6e30f57eefcd97ee412cd1cfffef28d69c694962d5fee257
+  PASS: all 4 runs produce the identical final-state digest
+  PASS: digest is a deterministic function of final state only
+RESULT: t01_reorder PASS

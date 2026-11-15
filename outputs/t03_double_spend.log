@@ -1,0 +1,8 @@
+Check t03_double_spend: same source lock minted twice
+  first mint of lock A: OK (minted 100000000 atoms to dest-alice (claim 25e6ae22293bfb5b))
+  second mint of lock A to another destination: ERR_ALREADY_MINTED (claim 25e6ae22293bfb5b already executed)
+  PASS: first mint of the lock succeeds
+  PASS: second mint of the same lock is rejected
+  PASS: no value minted to the second destination
+  PASS: original mint unchanged
+RESULT: t03_double_spend PASS

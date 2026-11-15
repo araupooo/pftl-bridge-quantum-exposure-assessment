@@ -1,0 +1,11 @@
+Check t05_quorum: 24-of-35 threshold honored
+  quorum figure: 24 of 35 witnesses (whitepaper section 1.11)
+  23 attestations: ERR_NO_QUORUM (23 distinct witnesses, quorum is 24)
+  PASS: 23 attestations are insufficient
+  24 attestations: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  PASS: 24 attestations are sufficient
+  35 attestations: OK (minted 50000000 atoms to dest-carol (claim 853b47fd02cd5228))
+  PASS: 35 attestations are sufficient
+  24 attestations from 23 distinct witnesses: ERR_NO_QUORUM (23 distinct witnesses, quorum is 24)
+  PASS: a duplicated witness does not count twice toward quorum
+RESULT: t05_quorum PASS
